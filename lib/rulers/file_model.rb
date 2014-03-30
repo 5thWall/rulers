@@ -3,6 +3,8 @@ require "multi_json"
 module Rulers
   module Model
     class FileModel
+      STRONG_PARAMS = %w(submitter quote attribution)
+
       def initialize(filename)
         @filename = filename
 
@@ -23,15 +25,43 @@ module Rulers
 
       def self.find(id)
         begin
-          FileModel.new("db/quotes/#{id}.json")
+          FileModel.new(model_path(id))
         rescue
           return nil
         end
       end
 
       def self.all
-        files = Dir['db/quotes/*.json']
+        files = Dir[model_path]
         files.map { |f| FileModel.new f }
+      end
+
+      def self.create(attrs)
+        hash = sanitize_attributes(attrs)
+        id = get_next_id
+
+        File.open(model_path(id), 'w') do |f|
+          f.write MultiJson.dump(hash, pretty: true)
+        end
+
+        FileModel.new model_path(id)
+      end
+
+      private
+      def self.model_path(id = '*')
+        File.join 'db', 'quotes', "#{id}.json"
+      end
+
+      def self.get_next_id
+        files = Dir[model_path]
+        names = files.map { |f| f.split('/')[-1] }
+        names.map { |b| b.to_i}.max + 1
+      end
+
+      def self.sanitize_attributes(attrs)
+        STRONG_PARAMS.reduce({}) do |hash, attr|
+          hash.merge(attr => attrs[attr] || '')
+        end
       end
     end
   end
