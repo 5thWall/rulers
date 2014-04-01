@@ -14,14 +14,15 @@ module Rulers
         env['PATH_INFO'] = '/home/index'
       end
 
-      klass, act = get_controller_and_action(env)
+      klass, action = get_controller_and_action(env)
       controller = klass.new(env)
-      text = controller.send(act)
+      controller.send(action)
 
-      if controller.get_response
-        controller.get_response.finish
+      if controller.response
+        controller.response.finish
       else
-        [200, {'Content-Type' => 'text/html'}, [text]]
+        controller.render(action)
+        controller.response.finish
       end
     end
   end

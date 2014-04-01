@@ -6,7 +6,7 @@ module Rulers
   class Controller
     include Rulers::Model
 
-    attr_reader :env
+    attr_reader :env, :response
 
     def initialize(env)
       @env = env
@@ -20,21 +20,11 @@ module Rulers
       request.params
     end
 
-    def response(text, status: 200, headers: {})
-      raise "Already responded!" if @response
-      body = Array(text)
-      @response = Rack::Response.new(body, status, headers)
+    def render(*args)
+      build_response(render_template(*args))
     end
 
-    def get_response
-      @response
-    end
-
-    def render_response(*args)
-      response(render(*args))
-    end
-
-    def render(view_name, locals = {})
+    def render_template(view_name, locals = {})
       filename = File.join 'app', 'views',
         controller_name, "#{view_name}.html.erb"
       template = File.read filename
@@ -51,6 +41,12 @@ module Rulers
     end
 
     private
+
+    def build_response(text, status: 200, headers: {})
+      raise "Already responded!" if @response
+      body = Array(text)
+      @response = Rack::Response.new(body, status, headers)
+    end
 
     def instance_vars_hash
       self.instance_variables.reduce({}) do |hash, var|
