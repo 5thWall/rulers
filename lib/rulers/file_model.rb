@@ -23,6 +23,10 @@ module Rulers
         @hash[name.to_s] = value
       end
 
+      def save
+        save_to_json(@id, @hash)
+      end
+
       def self.find(id)
         begin
           FileModel.new(model_path(id))
@@ -40,14 +44,19 @@ module Rulers
         hash = sanitize_attributes(attrs)
         id = get_next_id
 
-        File.open(model_path(id), 'w') do |f|
-          f.write MultiJson.dump(hash, pretty: true)
-        end
+        save_to_json(id, hash)
 
         FileModel.new model_path(id)
       end
 
       private
+
+      def self.save_to_json(id, hash)
+        File.open(model_path(id), 'w') do |f|
+          f.write MultiJson.dump(hash, pretty: true)
+        end
+      end
+
       def self.model_path(id = '*')
         File.join 'db', 'quotes', "#{id}.json"
       end
